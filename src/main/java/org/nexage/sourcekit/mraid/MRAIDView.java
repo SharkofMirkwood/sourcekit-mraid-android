@@ -83,6 +83,7 @@ public class MRAIDView extends RelativeLayout {
     private RelativeLayout expandedView;
     private RelativeLayout resizedView;
     private ImageButton closeRegion;
+    private ImageButton padlockRegion;
 
 	private Context context;
 	
@@ -301,21 +302,21 @@ public class MRAIDView extends RelativeLayout {
 		wv.setScrollBarStyle(WebView.SCROLLBARS_OUTSIDE_OVERLAY);
 		wv.setFocusableInTouchMode(false);
 		wv.setOnTouchListener(new OnTouchListener() {
-			@SuppressLint("ClickableViewAccessibility")
-			@Override
-			public boolean onTouch(View v, MotionEvent event) {
-				switch (event.getAction()) {
-				case MotionEvent.ACTION_DOWN:
-				case MotionEvent.ACTION_UP:
-					// isTouched = true;
-					if (!v.hasFocus()) {
-						v.requestFocus();
-					}
-					break;
-				}
-				return false;
-			}
-		});
+            @SuppressLint("ClickableViewAccessibility")
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                    case MotionEvent.ACTION_UP:
+                        // isTouched = true;
+                        if (!v.hasFocus()) {
+                            v.requestFocus();
+                        }
+                        break;
+                }
+                return false;
+            }
+        });
 		wv.getSettings().setJavaScriptEnabled(true);
 		wv.setWebChromeClient(mraidWebChromeClient);
 		wv.setWebViewClient(mraidWebViewClient);
@@ -419,21 +420,21 @@ public class MRAIDView extends RelativeLayout {
     // These are methods in the MRAID API.
     ///////////////////////////////////////////////////////
 	
-    private void close() {
+    public void close() {
 		MRAIDLog.d(TAG + "-JS callback", "close");
-    	handler.post(new Runnable() {
-			@Override
-			public void run() {
-				if (state == STATE_LOADING || (state == STATE_DEFAULT && !isInterstitial) || state == STATE_HIDDEN) {
-					// do nothing
-					return;
-				} else if (state == STATE_DEFAULT  || state == STATE_EXPANDED) {
-					closeFromExpanded();
-				} else if (state == STATE_RESIZED) {
-					closeFromResized();
-				}
-			}
-		});
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (state == STATE_LOADING || (state == STATE_DEFAULT && !isInterstitial) || state == STATE_HIDDEN) {
+                    // do nothing
+                    return;
+                } else if (state == STATE_DEFAULT || state == STATE_EXPANDED) {
+                    closeFromExpanded();
+                } else if (state == STATE_RESIZED) {
+                    closeFromResized();
+                }
+            }
+        });
 	}
 
     @SuppressWarnings("unused")
@@ -554,7 +555,7 @@ public class MRAIDView extends RelativeLayout {
 	}
 
     @SuppressWarnings("unused")
-	private void resize() {
+	public void resize() {
 		MRAIDLog.d(TAG + "-JS callback", "resize");
 		
 		// We need the cooperation of the app in order to do a resize. 
@@ -573,28 +574,33 @@ public class MRAIDView extends RelativeLayout {
     		resizedView = new RelativeLayout(context);
     		removeAllViews();
     		resizedView.addView(webView);
-    		addCloseRegion(resizedView);
+            addCloseRegion(resizedView);
     		FrameLayout rootView = (FrameLayout)getRootView().findViewById(android.R.id.content);
     		rootView.addView(resizedView);
     	}
     	setCloseRegionPosition(resizedView);
     	setResizedViewSize();
     	setResizedViewPosition();
-    	
-    	handler.post(new Runnable() {
-			@Override
-			public void run() {
-				fireStateChangeEvent();
+
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                fireStateChangeEvent();
 			}
 		});
 	}
+
+    public void destroyRootView() {
+        FrameLayout rootView = (FrameLayout)getRootView().findViewById(android.R.id.content);
+        rootView.removeView(resizedView);
+    }
 
     @SuppressWarnings("unused")
 	private void setOrientationProperties(Map<String, String> properties) {
 		boolean allowOrientationChange = Boolean.parseBoolean(properties.get("allowOrientationChange"));
 		String forceOrientation = properties.get("forceOrientation");
 		MRAIDLog.d(TAG + "-JS callback", "setOrientationProperties "
-				+ allowOrientationChange + " " + forceOrientation);
+                + allowOrientationChange + " " + forceOrientation);
 		if (orientationProperties.allowOrientationChange != allowOrientationChange ||
 				orientationProperties.forceOrientation !=
 				MRAIDOrientationProperties.forceOrientationFromString(forceOrientation)) {
@@ -746,7 +752,7 @@ public class MRAIDView extends RelativeLayout {
 		forceFullScreen();
 		expandedView = new RelativeLayout(context);
 		expandedView.addView(webView);
-		addCloseRegion(expandedView);
+        addCloseRegion(expandedView);
 		setCloseRegionPosition(expandedView);
 		((Activity)context).addContentView(expandedView,
 				new RelativeLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
@@ -764,7 +770,7 @@ public class MRAIDView extends RelativeLayout {
 		int heightInDip = resizeProperties.height;
 		Log.d(TAG, "setResizedViewSize " + widthInDip + "x" + heightInDip);
         int width = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, widthInDip, displayMetrics);
-        int height = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, heightInDip, displayMetrics);
+        int height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, heightInDip, displayMetrics);
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(width, height);
 		resizedView.setLayoutParams(params);
 	}
@@ -788,7 +794,7 @@ public class MRAIDView extends RelativeLayout {
 		FrameLayout.LayoutParams params = (FrameLayout.LayoutParams)resizedView.getLayoutParams();
         params.leftMargin = x;
         params.topMargin = y;
-		resizedView.setLayoutParams(params);
+        resizedView.setLayoutParams(params);
 		if (x != currentPosition.left || y != currentPosition.top || width != currentPosition.width() || height != currentPosition.height()) {
 			currentPosition.left = x;
 			currentPosition.top = y;
@@ -821,15 +827,15 @@ public class MRAIDView extends RelativeLayout {
 		FrameLayout rootView = (FrameLayout)((Activity)context).findViewById(android.R.id.content);
 		rootView.removeView(expandedView);
 		expandedView = null;
-		closeRegion = null;
-		
-		handler.post(new Runnable() {
-			@Override
-			public void run() {
-				restoreOriginalOrientation();
-				restoreOriginalScreenState();
-			}
-		});
+        closeRegion = null;
+
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                restoreOriginalOrientation();
+                restoreOriginalScreenState();
+            }
+        });
 		if (webViewPart2 == null) {
 			// close from 1-part expansion
 			addView(webView);
@@ -857,7 +863,7 @@ public class MRAIDView extends RelativeLayout {
     
     private void closeFromResized() {
 		state = STATE_DEFAULT;
-		isClosing = true;
+        isClosing = true;
 		removeResizeView();
 		addView(webView);
 		handler.post(new Runnable() {
@@ -953,43 +959,43 @@ public class MRAIDView extends RelativeLayout {
 		default: return "UNKNOWN";
     	}
 	}
-    
-	private void addCloseRegion(View view) {
-		// The input parameter should be either expandedView or resizedView.
-		
-		closeRegion = new ImageButton(context);
-		closeRegion.setBackgroundColor(Color.TRANSPARENT); 
-		closeRegion.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				close();
-			}
-		});
 
-		// The default close button is shown only on expanded banners and interstitials,
-		// but not on resized banners.
-		if (view == expandedView && !useCustomClose) {
-			showDefaultCloseButton();
-		}
+    private void addCloseRegion(View view) {
+        // The input parameter should be either expandedView or resizedView.
 
-		((ViewGroup) view).addView(closeRegion);
-	}
-	
-	private void showDefaultCloseButton() {
-		if (closeRegion != null) {
-			Drawable closeButtonNormalDrawable = Assets.getDrawableFromBase64(getResources(), Assets.new_close);
-			Drawable closeButtonPressedDrawable = Assets.getDrawableFromBase64(getResources(), Assets.new_close_pressed);
+        closeRegion = new ImageButton(context);
+        closeRegion.setBackgroundColor(Color.TRANSPARENT);
+        closeRegion.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                close();
+            }
+        });
 
-			StateListDrawable states = new StateListDrawable();
-			states.addState(new int[] { -android.R.attr.state_pressed }, closeButtonNormalDrawable);
-			states.addState(new int[] { android.R.attr.state_pressed }, closeButtonPressedDrawable);
+        // The default close button is shown only on expanded banners and interstitials,
+        // but not on resized banners.
+        if (view == expandedView && !useCustomClose) {
+            showDefaultCloseButton();
+        }
 
-			closeRegion.setImageDrawable(states);
-			closeRegion.setScaleType(ImageView.ScaleType.CENTER_CROP);
-		}
-	}
-	
-	private void removeDefaultCloseButton() {
+        ((ViewGroup) view).addView(closeRegion);
+    }
+
+    private void showDefaultCloseButton() {
+        if (closeRegion != null) {
+            Drawable closeButtonNormalDrawable = Assets.getDrawableFromBase64(getResources(), Assets.new_close);
+            Drawable closeButtonPressedDrawable = Assets.getDrawableFromBase64(getResources(), Assets.new_close_pressed);
+
+            StateListDrawable states = new StateListDrawable();
+            states.addState(new int[] { -android.R.attr.state_pressed }, closeButtonNormalDrawable);
+            states.addState(new int[] { android.R.attr.state_pressed }, closeButtonPressedDrawable);
+
+            closeRegion.setImageDrawable(states);
+            closeRegion.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        }
+    }
+
+    private void removeDefaultCloseButton() {
 		if (closeRegion != null) {
 			closeRegion.setImageResource(android.R.color.transparent);
 		}
@@ -1262,21 +1268,24 @@ public class MRAIDView extends RelativeLayout {
 			if (isExpandingPart2) {
 				isExpandingPart2 = false;
 				handler.post(new Runnable() {
-					@Override
-					public void run() {
-						injectJavaScript("mraid.setPlacementType('" + (isInterstitial ? "interstitial" : "inline") + "');");
-						setSupportedServices();
-						setScreenSize();
-						setDefaultPosition();
-					    MRAIDLog.d(TAG, "calling fireStateChangeEvent 2");
-						fireStateChangeEvent();
-						fireReadyEvent();
-						if (isViewable) {
-							fireViewableChangeEvent();
-						}
-					}
-				});
+                    @Override
+                    public void run() {
+                        injectJavaScript("mraid.setPlacementType('" + (isInterstitial ? "interstitial" : "inline") + "');");
+                        setSupportedServices();
+                        setScreenSize();
+                        setDefaultPosition();
+                        MRAIDLog.d(TAG, "calling fireStateChangeEvent 2");
+                        fireStateChangeEvent();
+                        fireReadyEvent();
+                        if (isViewable) {
+                            fireViewableChangeEvent();
+                        }
+                    }
+                });
 			}
+            if (listener != null) {
+                listener.mraidViewPageFinished(view);
+            }
 		}
 		
 		@Override

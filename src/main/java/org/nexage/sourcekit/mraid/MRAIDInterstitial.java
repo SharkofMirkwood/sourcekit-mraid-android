@@ -4,6 +4,7 @@ import org.nexage.sourcekit.mraid.internal.MRAIDLog;
 
 import android.content.Context;
 import android.util.Log;
+import android.view.View;
 
 public class MRAIDInterstitial implements MRAIDViewListener {
 	
@@ -57,14 +58,23 @@ public class MRAIDInterstitial implements MRAIDViewListener {
 	@Override
 	public void mraidViewClose(MRAIDView mraidView) {
         Log.d(TAG + "-MRAIDViewListener", "mraidViewClose");
-		isReady = false;
-		mraidView = null;
-        if (listener != null) {
-        	listener.mraidInterstitialHide(this);
+        if (isReady) {
+            isReady = false;
+            mraidView = null;
+            if (listener != null) {
+                listener.mraidInterstitialHide(this);
+            }
         }
 	}
 
-	@Override
+    @Override
+    public void mraidViewPageFinished(View view) {
+        if (listener != null) {
+            listener.mraidInterstitialPageFinished(view);
+        }
+    }
+
+    @Override
 	public boolean mraidViewResize(MRAIDView mraidView, int width, int height, int offsetX, int offsetY) {
 		return true;
 	}

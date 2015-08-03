@@ -1,5 +1,9 @@
 package org.nexage.sourcekit.mraid;
 
+import android.view.View;
+import android.webkit.WebView;
+import android.widget.ImageButton;
+
 public interface MRAIDViewListener {
 
     /******************************************************************************
@@ -14,4 +18,5 @@ public interface MRAIDViewListener {
 
     public boolean mraidViewResize(MRAIDView mraidView, int width, int height, int offsetX, int offsetY);
 
+    public void mraidViewPageFinished(View view);
 }
